@@ -2,6 +2,8 @@ package grabber
 
 import (
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"os"
 	"path"
 	"time"
@@ -22,19 +24,27 @@ import (
 type Client struct {
 	config  *config.Download
 	db      *db.Client
+	dbConfig *config.Db
 	server  *server.Client
+	serverconfig  *config.Server
 	tempdir string
 }
 
 // New creates new grabber instance
-func New(dlConfig *config.Download, dbConfig *config.Db, serverConfig *config.Server) (*Client, error) {
-	var dbCli *db.Client
+func New(dlConfig *config.Download, dbConfig *config.Db, dbCli *db.Client, serverConfig *config.Server) (*Client, error) {
+	var dbCliLocal *db.Client
 	var serverCli *server.Client
 	var err error
 
-	// DB client
-	if dbCli, err = db.New(dbConfig); err != nil {
-		return nil, errors.Wrap(err, "Cannot open database")
+	if dbCli != nil {
+		log.Debug().Msg("Using alreading opened DB connection")
+		dbCliLocal = dbCli
+	} else {
+		// DB client
+		log.Debug().Msg("Opening new DB connection")
+		if dbCliLocal, err = db.New(dbConfig); err != nil {
+			return nil, errors.Wrap(err, "Cannot open database")
+		}
 	}
 
 	// Server client
@@ -57,21 +67,64 @@ func New(dlConfig *config.Download, dbConfig *config.Db, serverConfig *config.Se
 
 	return &Client{
 		config:  dlConfig,
-		db:      dbCli,
+		db:      dbCliLocal,
+		dbConfig: dbConfig,
 		server:  serverCli,
+		serverconfig: serverConfig,
 		tempdir: tempdir,
 	}, nil
 }
 
-func (c *Client) Grab(files []File) journal.Journal {
+func (c *Client) Grab(files []File, concurrency uint32) journal.Journal {
 	jnl := journal.New()
 	jnl.ServerHost = c.server.Common().Host
 
-	for _, file := range files {
-		if entry := c.download(file, 0); entry != nil {
-			jnl.Add(*entry)
-		}
+	log.Debug().Msg("Closing main connexion to Server ...")
+	if err := c.server.Close(); err != nil {
+		log.Warn().Err(err).Msg("Cannot close server connection")
 	}
+	log.Debug().Msg("Main connection to Server closed.")
+
+	log.Info().Msgf("Using %d concurrency for downloading.", concurrency)
+
+	var ops uint32 = 0
+	var wg sync.WaitGroup
+
+	for _, file := range files {
+		
+		for atomic.LoadUint32(&ops)>= concurrency {
+			log.Info().Msgf("Waiting 1 second for a thread to finish, nb threads %d", atomic.LoadUint32(&ops))
+			time.Sleep(1 * time.Second)
+		}
+
+		log.Debug().Msgf("Starting a new download thread for file %s, nb threads %d", path.Join(file.SrcDir, file.Info.Name()), atomic.AddUint32(&ops,1))
+		wg.Add (1)
+
+		go func(fileToDownload File) {
+
+			defer wg.Done()
+			
+			var threadcli  *Client
+			var err error
+
+			if threadcli, err = New(c.config, c.dbConfig, c.db, c.serverconfig); err != nil {
+				log.Warn().Err(err).Msg("Cannot create grabber")
+			} else {
+				defer threadcli.CloseWithoutDB()
+				if entry := threadcli.download(fileToDownload, 0); entry != nil {
+					jnl.Add(*entry)
+				}
+			}
+
+			atomic.CompareAndSwapUint32(&ops, atomic.LoadUint32(&ops), atomic.LoadUint32(&ops)-1)
+		}(file)		
+	}
+
+	log.Debug().Msgf("Queue is empty, remaining threads %d", atomic.LoadUint32(&ops))
+
+	wg.Wait()
+
+	log.Debug().Msgf("All threads finished, remaining threads %d in counter ( :-( if not zero )", atomic.LoadUint32(&ops))
 
 	return jnl.Journal
 }
@@ -140,7 +193,19 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 			entry.Level = journal.EntryLevelError
 			entry.Text = fmt.Sprintf("Cannot download file: %v", err)
 		} else {
-			return c.download(file, retry)
+			// on relance une connexion pour le retry
+			var threadcli  *Client
+			var err error
+
+			if threadcli, err = New(c.config, c.dbConfig, c.db, c.serverconfig); err != nil {
+				log.Warn().Err(err).Msg("Cannot create grabber")
+			} else {
+				defer threadcli.CloseWithoutDB()
+				return c.download(file, retry)
+			}
+
+
+
 		}
 	} else {
 		if err = destfile.Close(); err != nil {
@@ -248,7 +313,8 @@ func (c *Client) isExcluded(file File) bool {
 }
 
 // Close closes grabber
-func (c *Client) Close() {
+func (c *Client) CloseAll() {
+	log.Debug().Msg("Closing all connections")
 	if err := c.db.Close(); err != nil {
 		log.Warn().Err(err).Msg("Cannot close database")
 	}
@@ -257,5 +323,22 @@ func (c *Client) Close() {
 	}
 	if err := os.RemoveAll(c.tempdir); err != nil {
 		log.Warn().Err(err).Msg("Cannot remove temp folder")
+	}
+}
+
+func (c *Client) CloseWithoutDB() {
+	log.Debug().Msg("Closing all connections but DB")
+	if err := c.server.Close(); err != nil {
+		log.Warn().Err(err).Msg("Cannot close server connection")
+	}
+	if err := os.RemoveAll(c.tempdir); err != nil {
+		log.Warn().Err(err).Msg("Cannot remove temp folder")
+	}
+}
+
+func (c *Client) CloseDB() {
+	log.Debug().Msg("Closing DB connection")
+	if err := c.db.Close(); err != nil {
+		log.Warn().Err(err).Msg("Cannot close database")
 	}
 }

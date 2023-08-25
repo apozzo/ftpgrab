@@ -37,7 +37,9 @@ func (fg *FtpGrab) Start() error {
 	var err error
 
 	// Run on startup
-	fg.Run()
+	if fg.cfg.Cli.RunOnStart {
+		fg.Run()
+	}
 
 	// Init scheduler if defined
 	if len(fg.cfg.Cli.Schedule) == 0 {
@@ -79,10 +81,10 @@ func (fg *FtpGrab) Run() {
 	}
 
 	// Grabber client
-	if fg.grabber, err = grabber.New(fg.cfg.Download, fg.cfg.Db, fg.cfg.Server); err != nil {
+	if fg.grabber, err = grabber.New(fg.cfg.Download, fg.cfg.Db, nil, fg.cfg.Server); err != nil {
 		log.Fatal().Err(err).Msg("Cannot create grabber")
 	}
-	defer fg.grabber.Close()
+	defer fg.grabber.CloseDB()
 
 	// List files
 	files := fg.grabber.ListFiles()
@@ -93,7 +95,7 @@ func (fg *FtpGrab) Run() {
 	log.Info().Msgf("%d file(s) found", len(files))
 
 	// Grab
-	jnl := fg.grabber.Grab(files)
+	jnl := fg.grabber.Grab(files, fg.cfg.Cli.Concurrency)
 	jnl.Duration = time.Since(start)
 	log.Info().
 		Str("duration", time.Since(start).Round(time.Millisecond).String()).
@@ -111,7 +113,7 @@ func (fg *FtpGrab) Run() {
 
 // Close closes ftpgrab
 func (fg *FtpGrab) Close() {
-	fg.grabber.Close()
+	fg.grabber.CloseDB()
 	if fg.cron != nil {
 		fg.cron.Stop()
 	}

@@ -20,6 +20,8 @@ Flags:
       --version
       --config=STRING       FTPGrab configuration file ($CONFIG).
       --schedule=STRING     CRON expression format ($SCHEDULE).
+      --runonstart=true     Begin download at startup or scheduled only
+      --concurrency=1       Download concurrency (threads)
       --log-level="info"    Set log level ($LOG_LEVEL).
       --log-json            Enable JSON logging output ($LOG_JSON).
       --log-timestamp       Adds the current local time as UNIX timestamp to the
@@ -36,6 +38,8 @@ Following environment variables can be used in place:
 | Name               | Default       | Description   |
 |--------------------|---------------|---------------|
 | `CONFIG`           |               | FTPGrab configuration file |
+| `CONCURRENCY`      |               | Download concurrency (threads) |
+| `RUNONSTART`       |               | Begin download at startup or scheduled only |
 | `SCHEDULE`         |               | [CRON expression](https://godoc.org/github.com/robfig/cron#hdr-CRON_Expression_Format) to schedule FTPGrab |
 | `LOG_LEVEL`        | `info`        | Log level output |
 | `LOG_JSON`         | `false`       | Enable JSON logging output |

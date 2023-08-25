@@ -11,6 +11,7 @@ server:
     disableEPSV: false
     disableMLSD: false
     tls: false
+    explicittls: false
     insecureSkipVerify: false
     logTrace: false
 
