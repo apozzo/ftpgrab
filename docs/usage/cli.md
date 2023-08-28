@@ -21,6 +21,7 @@ Flags:
       --config=STRING       FTPGrab configuration file ($CONFIG).
       --schedule=STRING     CRON expression format ($SCHEDULE).
       --runonstart=true     Begin download at startup or scheduled only
+      --nodownload=false    Do not download (just list files)
       --concurrency=1       Download concurrency (threads)
       --log-level="info"    Set log level ($LOG_LEVEL).
       --log-json            Enable JSON logging output ($LOG_JSON).

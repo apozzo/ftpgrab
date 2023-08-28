@@ -6,6 +6,7 @@ import (
 
 	"github.com/crazy-max/ftpgrab/v7/internal/config"
 	"github.com/crazy-max/ftpgrab/v7/internal/grabber"
+	"github.com/crazy-max/ftpgrab/v7/internal/journal"
 	"github.com/crazy-max/ftpgrab/v7/internal/notif"
 	"github.com/hako/durafmt"
 	"github.com/robfig/cron/v3"
@@ -94,9 +95,17 @@ func (fg *FtpGrab) Run() {
 	}
 	log.Info().Msgf("%d file(s) found", len(files))
 
+	var jnl journal.Journal
 	// Grab
-	jnl := fg.grabber.Grab(files, fg.cfg.Cli.Concurrency)
+	if fg.cfg.Cli.NoDownload {
+		// do not download
+		jnl = journal.New().Journal
+	} else {
+		jnl = fg.grabber.Grab(files, fg.cfg.Cli.Concurrency)
+	}
 	jnl.Duration = time.Since(start)
+
+
 	log.Info().
 		Str("duration", time.Since(start).Round(time.Millisecond).String()).
 		Msg("Finished")
