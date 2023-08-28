@@ -29,6 +29,7 @@ func New(cfg *config.ServerFTP) (*server.Client, error) {
 
 	ftpConfig := []ftp.DialOption{
 		ftp.DialWithTimeout(*cfg.Timeout),
+		ftp.DialWithShutTimeout(*cfg.Timeout),
 		ftp.DialWithDisabledEPSV(*cfg.DisableEPSV),
 		ftp.DialWithDisabledUTF8(*cfg.DisableUTF8),
 		ftp.DialWithDisabledMLSD(*cfg.DisableMLSD),
