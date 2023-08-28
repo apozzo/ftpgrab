@@ -1,9 +1,12 @@
 package grabber
 
 import (
+	"fmt"
 	"os"
 	"path"
+	"time"
 
+	"github.com/antonmedv/expr"
 	"github.com/rs/zerolog/log"
 )
 
@@ -15,20 +18,37 @@ type File struct {
 	Info    os.FileInfo
 }
 
+func (c *Client) formatExprPath(pathExpression string) string {
+	env := map[string]any{
+		"day":   time.Now().Day(),
+		"year":  time.Now().Year(),
+		"month": int(time.Now().Month()),
+	}
+
+	//outresult, err := expr.Eval(`join(["/output/directory", string(year), string(month-1), string(day-2)], "/")`, env)
+	outresult, err := expr.Eval(pathExpression, env)
+	if err != nil {
+		panic(err)
+	}
+
+	return fmt.Sprint(outresult)
+}
+
 func (c *Client) ListFiles() []File {
 	var files []File
 
 	// Iterate sources
 	for _, src := range c.server.Common().Sources {
-		log.Debug().Str("source", src).Msg("Listing files")
+		source := c.formatExprPath(src)
+		log.Debug().Str("source", source).Msg("Listing files")
 
 		// Check basedir
-		dest := c.config.Output
-		if src != "/" && *c.config.CreateBaseDir {
-			dest = path.Join(dest, src)
+		dest := c.formatExprPath(c.config.Output)
+		if source != "/" && *c.config.CreateBaseDir {
+			dest = path.Join(dest, source)
 		}
 
-		files = append(files, c.readDir(src, src, dest)...)
+		files = append(files, c.readDir(source, source, dest)...)
 	}
 
 	return files
