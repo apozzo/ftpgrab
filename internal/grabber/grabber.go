@@ -2,10 +2,10 @@ package grabber
 
 import (
 	"fmt"
-	"sync"
-	"sync/atomic"
 	"os"
 	"path"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/crazy-max/ftpgrab/v7/internal/config"
@@ -17,17 +17,18 @@ import (
 	"github.com/crazy-max/ftpgrab/v7/pkg/utl"
 	"github.com/docker/go-units"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 // Client represents an active grabber object
 type Client struct {
-	config  *config.Download
-	db      *db.Client
-	dbConfig *config.Db
-	server  *server.Client
-	serverconfig  *config.Server
-	tempdir string
+	config       *config.Download
+	db           *db.Client
+	dbConfig     *config.Db
+	server       *server.Client
+	serverconfig *config.Server
+	tempdir      string
 }
 
 // New creates new grabber instance
@@ -66,12 +67,12 @@ func New(dlConfig *config.Download, dbConfig *config.Db, dbCli *db.Client, serve
 	}
 
 	return &Client{
-		config:  dlConfig,
-		db:      dbCliLocal,
-		dbConfig: dbConfig,
-		server:  serverCli,
+		config:       dlConfig,
+		db:           dbCliLocal,
+		dbConfig:     dbConfig,
+		server:       serverCli,
 		serverconfig: serverConfig,
-		tempdir: tempdir,
+		tempdir:      tempdir,
 	}, nil
 }
 
@@ -91,20 +92,20 @@ func (c *Client) Grab(files []File, concurrency uint32) journal.Journal {
 	var wg sync.WaitGroup
 
 	for _, file := range files {
-		
-		for atomic.LoadUint32(&ops)>= concurrency {
+
+		for atomic.LoadUint32(&ops) >= concurrency {
 			log.Info().Msgf("Waiting 1 second for a thread to finish, nb threads %d", atomic.LoadUint32(&ops))
 			time.Sleep(1 * time.Second)
 		}
 
-		log.Debug().Msgf("Starting a new download thread for file %s, nb threads %d", path.Join(file.SrcDir, file.Info.Name()), atomic.AddUint32(&ops,1))
-		wg.Add (1)
+		log.Debug().Msgf("Starting a new download thread for file %s, nb threads %d", path.Join(file.SrcDir, file.Info.Name()), atomic.AddUint32(&ops, 1))
+		wg.Add(1)
 
 		go func(fileToDownload File) {
 
 			defer wg.Done()
-			
-			var threadcli  *Client
+
+			var threadcli *Client
 			var err error
 
 			if threadcli, err = New(c.config, c.dbConfig, c.db, c.serverconfig); err != nil {
@@ -117,7 +118,7 @@ func (c *Client) Grab(files []File, concurrency uint32) journal.Journal {
 			}
 
 			atomic.CompareAndSwapUint32(&ops, atomic.LoadUint32(&ops), atomic.LoadUint32(&ops)-1)
-		}(file)		
+		}(file)
 	}
 
 	log.Debug().Msgf("Queue is empty, remaining threads %d", atomic.LoadUint32(&ops))
@@ -129,13 +130,22 @@ func (c *Client) Grab(files []File, concurrency uint32) journal.Journal {
 	return jnl.Journal
 }
 
+func (c *Client) SkippingFile(entry *journal.Entry, sublogger zerolog.Logger) *journal.Entry {
+	if !*c.config.HideSkipped {
+		sublogger.Warn().Msgf("Skipped (%s)", entry.Status)
+		entry.Level = journal.EntryLevelSkip
+		return entry
+	}
+	return nil
+}
+
 func (c *Client) download(file File, retry int) *journal.Entry {
 	srcpath := path.Join(file.SrcDir, file.Info.Name())
 	destpath := path.Join(file.DestDir, file.Info.Name())
 
 	entry := &journal.Entry{
 		File:   srcpath,
-		Status: c.getStatus(file),
+		Status: c.GetStatus(file),
 	}
 
 	sublogger := log.With().
@@ -154,12 +164,14 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 	}
 
 	if entry.Status.IsSkipped() {
-		if !*c.config.HideSkipped {
-			sublogger.Warn().Msgf("Skipped (%s)", entry.Status)
-			entry.Level = journal.EntryLevelSkip
-			return entry
-		}
-		return nil
+		// if !*c.config.HideSkipped {
+		// 	sublogger.Warn().Msgf("Skipped (%s)", entry.Status)
+		// 	entry.Level = journal.EntryLevelSkip
+		// 	return entry
+		// }
+		// return nil
+
+		return c.SkippingFile(entry, sublogger)
 	}
 
 	retrieveStart := time.Now()
@@ -194,7 +206,7 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 			entry.Text = fmt.Sprintf("Cannot download file: %v", err)
 		} else {
 			// on relance une connexion pour le retry
-			var threadcli  *Client
+			var threadcli *Client
 			var err error
 
 			if threadcli, err = New(c.config, c.dbConfig, c.db, c.serverconfig); err != nil {
@@ -203,8 +215,6 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 				defer threadcli.CloseWithoutDB()
 				return c.download(file, retry)
 			}
-
-
 
 		}
 	} else {
@@ -270,10 +280,10 @@ func (c *Client) createFile(filename string) (*os.File, error) {
 	return destfile, nil
 }
 
-func (c *Client) getStatus(file File) journal.EntryStatus {
-	if !c.isIncluded(file) {
+func (c *Client) GetStatus(file File) journal.EntryStatus {
+	if !c.IsIncluded(file) {
 		return journal.EntryStatusNotIncluded
-	} else if c.isExcluded(file) {
+	} else if c.IsExcluded(file) {
 		return journal.EntryStatusExcluded
 	} else if file.Info.ModTime().Before(c.config.SinceTime) {
 		return journal.EntryStatusOutdated
@@ -288,7 +298,7 @@ func (c *Client) getStatus(file File) journal.EntryStatus {
 	return journal.EntryStatusNeverDl
 }
 
-func (c *Client) isIncluded(file File) bool {
+func (c *Client) IsIncluded(file File) bool {
 	if len(c.config.Include) == 0 {
 		return true
 	}
@@ -300,7 +310,7 @@ func (c *Client) isIncluded(file File) bool {
 	return false
 }
 
-func (c *Client) isExcluded(file File) bool {
+func (c *Client) IsExcluded(file File) bool {
 	if len(c.config.Exclude) == 0 {
 		return false
 	}

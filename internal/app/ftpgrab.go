@@ -1,6 +1,7 @@
 package app
 
 import (
+	"path"
 	"sync/atomic"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/crazy-max/ftpgrab/v7/internal/grabber"
 	"github.com/crazy-max/ftpgrab/v7/internal/journal"
 	"github.com/crazy-max/ftpgrab/v7/internal/notif"
+	"github.com/docker/go-units"
 	"github.com/hako/durafmt"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
@@ -93,7 +95,42 @@ func (fg *FtpGrab) Run() {
 		log.Warn().Msg("No file found from the provided sources")
 		return
 	}
-	log.Info().Msgf("%d file(s) found", len(files))
+	log.Info().Msgf("%d file(s) found on remote site.", len(files))
+
+	log.Info().Msg("Applying filter to file list ...")
+	var filteredFiles []grabber.File
+	var includedFiles []grabber.File
+	var sumIncluded float64 = 0
+	var sumDownloading float64 = 0
+
+	for _, file := range files {
+
+		entry := &journal.Entry{
+			File:   path.Join(file.SrcDir, file.Info.Name()),
+			Status: fg.grabber.GetStatus(file),
+		}
+
+		sublogger := log.With().
+			Str("src", entry.File).
+			Str("dest", file.DestDir).
+			Str("size", units.HumanSize(float64(file.Info.Size()))).
+			Logger()
+
+		if fg.grabber.IsIncluded(file) && !fg.grabber.IsExcluded(file) {
+			includedFiles = append(includedFiles, file)
+			sumIncluded += float64(file.Info.Size())
+		}
+
+		if entry.Status.IsSkipped() {
+			fg.grabber.SkippingFile(entry, sublogger)
+		} else {
+			filteredFiles = append(filteredFiles, file)
+			sumDownloading += float64(file.Info.Size())
+		}
+	}
+
+	log.Info().Msgf("%d file(s) of %s to be included from remote site.", len(includedFiles), units.BytesSize(sumIncluded))
+	log.Info().Msgf("%d file(s) of %s to be downloaded from remote site.", len(filteredFiles), units.BytesSize(sumDownloading))
 
 	var jnl journal.Journal
 	// Grab
@@ -101,10 +138,9 @@ func (fg *FtpGrab) Run() {
 		// do not download
 		jnl = journal.New().Journal
 	} else {
-		jnl = fg.grabber.Grab(files, fg.cfg.Cli.Concurrency)
+		jnl = fg.grabber.Grab(filteredFiles, fg.cfg.Cli.Concurrency)
 	}
 	jnl.Duration = time.Since(start)
-
 
 	log.Info().
 		Str("duration", time.Since(start).Round(time.Millisecond).String()).
