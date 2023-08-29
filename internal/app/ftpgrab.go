@@ -95,7 +95,7 @@ func (fg *FtpGrab) Run() {
 		log.Warn().Msg("No file found from the provided sources")
 		return
 	}
-	log.Info().Msgf("%d file(s) found on remote site.", len(files))
+	log.Info().Strs("sources", fg.grabber.ListExprSrc()).Msgf("%d file(s) found on remote site directories.", len(files))
 
 	log.Info().Msg("Applying filter to file list ...")
 	var filteredFiles []grabber.File
@@ -129,8 +129,8 @@ func (fg *FtpGrab) Run() {
 		}
 	}
 
-	log.Info().Msgf("%d file(s) of %s to be included from remote site.", len(includedFiles), units.BytesSize(sumIncluded))
-	log.Info().Msgf("%d file(s) of %s to be downloaded from remote site.", len(filteredFiles), units.BytesSize(sumDownloading))
+	log.Info().Strs("sources", fg.grabber.ListExprSrc()).Msgf("%d file(s) of %s to be included from remote site.", len(includedFiles), units.BytesSize(sumIncluded))
+	log.Info().Strs("sources", fg.grabber.ListExprSrc()).Msgf("%d file(s) of %s to be downloaded from remote site.", len(filteredFiles), units.BytesSize(sumDownloading))
 
 	var jnl journal.Journal
 	// Grab

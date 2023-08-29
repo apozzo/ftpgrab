@@ -34,6 +34,16 @@ func (c *Client) formatExprPath(pathExpression string) string {
 	return fmt.Sprint(outresult)
 }
 
+func (c *Client) ListExprSrc() []string {
+	var sources []string
+
+	for _, src := range c.server.Common().Sources {
+		sources = append(sources, c.formatExprPath(src))
+	}
+
+	return sources
+}
+
 func (c *Client) ListFiles() []File {
 	var files []File
 
