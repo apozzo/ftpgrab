@@ -74,8 +74,8 @@ func (c *Client) readDir(base string, srcdir string, destdir string, retry int) 
 	items, err := c.server.ReadDir(srcdir)
 	if err != nil {
 
-		log.Error().Err(err).Str("source", base).Msgf("Cannot read directory %s, retry %d/%d", srcdir, retry, c.config.Retry)
 		retry++
+		log.Error().Err(err).Str("source", base).Msgf("Cannot read directory %s, retry %d/%d", srcdir, retry, c.config.Retry)
 
 		if retry == c.config.Retry {
 			log.Error().Err(err).Str("source", base).Msgf("Cannot read directory %s", srcdir)
@@ -99,7 +99,7 @@ func (c *Client) readDir(base string, srcdir string, destdir string, retry int) 
 
 			if err != nil {
 				log.Error().Str("source", base).Msgf("Cannot connect to server, cannot read directory %s", srcdir)
-				return []File{}
+				panic(err)
 
 			} else {
 				return c.readDir(base, srcdir, destdir, retry)
