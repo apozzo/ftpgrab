@@ -9,7 +9,7 @@ import (
 
 // Download holds download configuration details
 type Download struct {
-	Output        string      `yaml:"output,omitempty" json:"output,omitempty" validate:"required,dir"`
+	Output        string      `yaml:"output,omitempty" json:"output,omitempty" validate:"required"`
 	UID           int         `yaml:"uid,omitempty" json:"uid,omitempty"`
 	GID           int         `yaml:"gid,omitempty" json:"gid,omitempty"`
 	ChmodFile     os.FileMode `yaml:"chmodFile,omitempty" json:"chmodFile,omitempty"`

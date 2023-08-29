@@ -94,9 +94,10 @@ func (cfg *Config) validate() error {
 	}
 
 	if cfg.Download != nil {
-		if err := os.MkdirAll(cfg.Download.Output, os.ModePerm); err != nil {
-			return errors.Wrap(err, "Cannot create download output folder")
-		}
+		// not needeed
+		// if err := os.MkdirAll(cfg.Download.Output, os.ModePerm); err != nil {
+		// 	return errors.Wrap(err, "Cannot create download output folder")
+		// }
 		for _, include := range cfg.Download.Include {
 			if _, err := regexp.Compile(include); err != nil {
 				return errors.Wrapf(err, "Include regex '%s' cannot compile", include)
