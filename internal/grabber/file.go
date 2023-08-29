@@ -48,8 +48,8 @@ func (c *Client) ListFiles() []File {
 	var files []File
 
 	// Iterate sources
-	for _, src := range c.server.Common().Sources {
-		source := c.formatExprPath(src)
+	for _, src := range c.ListExprSrc() {
+		source := src
 		log.Debug().Str("source", source).Msg("Listing files")
 
 		// Check basedir
