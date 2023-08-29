@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -29,12 +30,14 @@ type Client struct {
 	server       *server.Client
 	serverconfig *config.Server
 	tempdir      string
+	stopDownload *atomic.Bool
 }
 
 // New creates new grabber instance
 func New(dlConfig *config.Download, dbConfig *config.Db, dbCli *db.Client, serverConfig *config.Server) (*Client, error) {
 	var dbCliLocal *db.Client
 	var serverCli *server.Client
+	var stopDownload atomic.Bool
 	var err error
 
 	if dbCli != nil {
@@ -66,6 +69,8 @@ func New(dlConfig *config.Download, dbConfig *config.Db, dbCli *db.Client, serve
 		return nil, errors.Wrap(err, "Cannot create temp dir")
 	}
 
+	stopDownload.Store(false)
+
 	return &Client{
 		config:       dlConfig,
 		db:           dbCliLocal,
@@ -73,6 +78,7 @@ func New(dlConfig *config.Download, dbConfig *config.Db, dbCli *db.Client, serve
 		server:       serverCli,
 		serverconfig: serverConfig,
 		tempdir:      tempdir,
+		stopDownload: &stopDownload,
 	}, nil
 }
 
@@ -93,6 +99,11 @@ func (c *Client) Grab(files []File, concurrency uint32) journal.Journal {
 
 	for _, file := range files {
 
+		if c.stopDownload.Load() {
+			log.Info().Msg("Stop Downloading")
+			break
+		}
+
 		for atomic.LoadUint32(&ops) >= concurrency {
 			log.Info().Msgf("Waiting 1 second for a thread to finish, nb threads %d", atomic.LoadUint32(&ops))
 			time.Sleep(1 * time.Second)
@@ -109,12 +120,13 @@ func (c *Client) Grab(files []File, concurrency uint32) journal.Journal {
 			var err error
 
 			if threadcli, err = New(c.config, c.dbConfig, c.db, c.serverconfig); err != nil {
-				log.Warn().Err(err).Msg("Cannot create grabber")
+				log.Error().Str("file", path.Join(fileToDownload.SrcDir, fileToDownload.Info.Name())).Err(err).Msg("Cannot create grabber")
 			} else {
 				defer threadcli.CloseWithoutDB()
 				if entry := threadcli.download(fileToDownload, 0); entry != nil {
 					jnl.Add(*entry)
 				}
+				c.stopDownload.CompareAndSwap(false, threadcli.stopDownload.Load())
 			}
 
 			atomic.CompareAndSwapUint32(&ops, atomic.LoadUint32(&ops), atomic.LoadUint32(&ops)-1)
@@ -198,6 +210,14 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 
 	err = c.server.Retrieve(srcpath, destfile)
 	if err != nil {
+
+		if strings.Contains(err.Error(), "quota exceeded") {
+			c.stopDownload.Store(true)
+			entry.Level = journal.EntryLevelError
+			entry.Text = fmt.Sprintf("Cannot download file: %v", err)
+			return entry
+		}
+
 		retry++
 		sublogger.Error().Err(err).Msgf("Error downloading, retry %d/%d", retry, c.config.Retry)
 		if retry == c.config.Retry {
