@@ -104,7 +104,6 @@ COPY --link --from=releaser /out /
 FROM alpine:${ALPINE_VERSION}
 RUN apk --update --no-cache add ca-certificates openssl
 COPY --from=build /usr/bin/ftpgrab /usr/local/bin/ftpgrab
-ENV FTPGRAB_DB_PATH="/db/ftpgrab.db" \
-  FTPGRAB_DOWNLOAD_OUTPUT="/download"
+ENV FTPGRAB_DB_PATH="/db/ftpgrab.db" 
 VOLUME [ "/db", "/download" ]
 ENTRYPOINT [ "ftpgrab" ]
