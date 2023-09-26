@@ -15,4 +15,5 @@ type Cli struct {
 	LogTimestamp bool   `kong:"name='log-timestamp',env='LOG_TIMESTAMP',default='true',help='Adds the current local time as UNIX timestamp to the logger context.'"`
 	LogCaller    bool   `kong:"name='log-caller',env='LOG_CALLER',default='false',help='Add file:line of the caller to log output.'"`
 	LogFile      string `kong:"name='log-file',env='LOG_FILE',help='Add logging to a specific file.'"`
+	LogColor     bool   `kong:"name='log-color',env='LOG_COLOR',default='false',help='Colored log (console).'"`
 }

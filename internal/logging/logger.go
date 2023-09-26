@@ -30,6 +30,7 @@ func Configure(cli config.Cli) {
 			Out:          os.Stdout,
 			TimeFormat:   time.RFC1123,
 			PartsExclude: excludeParts,
+			NoColor:      !cli.LogColor,
 		}
 	} else {
 		w = os.Stdout

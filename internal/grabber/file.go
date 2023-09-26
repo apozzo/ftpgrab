@@ -46,6 +46,11 @@ func (c *Client) ListExprSrc() []string {
 	return sources
 }
 
+func (c *Client) getExprDest() string {
+
+	return c.formatExprPath(c.config.Output)
+}
+
 func (c *Client) ListFiles() []File {
 	var files []File
 
@@ -55,7 +60,7 @@ func (c *Client) ListFiles() []File {
 		log.Debug().Str("source", source).Msg("Listing files")
 
 		// Check basedir
-		dest := c.formatExprPath(c.config.Output)
+		dest := c.getExprDest()
 		if source != "/" && *c.config.CreateBaseDir {
 			dest = path.Join(dest, source)
 		}
