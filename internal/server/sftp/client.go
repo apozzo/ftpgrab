@@ -125,10 +125,12 @@ func (c *Client) Retrieve(path string, dest io.Writer) error {
 
 // Close closes sftp connection
 func (c *Client) Close() error {
-	if err := c.ssh.Close(); err != nil {
+	if err := c.sftp.Close(); err != nil && err != io.EOF {
+		log.Debug().Err(err).Msg("Error during close of sftp client in SFTP server !")
 		return err
 	}
-	if err := c.sftp.Close(); err != nil && err != io.EOF {
+	if err := c.ssh.Close(); err != nil {
+		log.Debug().Err(err).Msg("Error during close of ssh client in SFTP server !")
 		return err
 	}
 	return nil
