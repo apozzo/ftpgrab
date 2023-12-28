@@ -1,5 +1,5 @@
 site_name: FTPGrab
-site_description: Grab your files periodically from a remote FTP or SFTP server easily
+site_description: Grab your files periodically from a remote FTP, SFTP or HTTP(S) server easily
 site_author: CrazyMax
 site_url: https://crazymax.dev/ftpgrab/
 edit_uri: edit/master/docs/
@@ -104,6 +104,7 @@ nav:
     - .server:
       - .ftp: config/server/ftp.md
       - .sftp: config/server/sftp.md
+      - .http: config/server/http.md
     - .download: config/download.md
     - .notif:
       - .mail: config/notif/mail.md

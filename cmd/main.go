@@ -23,7 +23,7 @@ var (
 	meta    = config.Meta{
 		ID:     "ftpgrab",
 		Name:   "FTPGrab",
-		Desc:   "Grab your files periodically from a remote FTP or SFTP server easily",
+		Desc:   "Grab your files periodically from a remote server easily (support FTP, SFTP and HTTP(S))",
 		URL:    "https://github.com/crazy-max/ftpgrab",
 		Logo:   "https://raw.githubusercontent.com/crazy-max/ftpgrab/master/.res/ftpgrab.png",
 		Author: "CrazyMax",

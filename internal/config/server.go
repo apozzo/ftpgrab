@@ -4,6 +4,7 @@ package config
 type Server struct {
 	FTP  *ServerFTP  `yaml:"ftp,omitempty" json:"ftp,omitempty"`
 	SFTP *ServerSFTP `yaml:"sftp,omitempty" json:"sftp,omitempty"`
+	HTTP *ServerHTTP `yaml:"http,omitempty" json:"http,omitempty"`
 }
 
 // ServerCommon holds common data server configuration

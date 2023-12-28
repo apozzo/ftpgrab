@@ -173,6 +173,7 @@ Can be transposed to:
 * server
     * [ftp](server/ftp.md)
     * [sftp](server/sftp.md)
+    * [http](server/http.md)
 * [download](download.md)
 * notif
     * [mail](notif/mail.md)

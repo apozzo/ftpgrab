@@ -1,7 +1,7 @@
 # SFTP server configuration
 
 !!! warning
-    `ftp` and `sftp` are mutually exclusive
+    `ftp`,`sftp` and `http` are mutually exclusive
 
 !!! example
     ```yaml

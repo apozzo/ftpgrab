@@ -104,7 +104,6 @@ func (fg *FtpGrab) Run() {
 	var sumDownloading float64 = 0
 
 	for _, file := range files {
-
 		entry := &journal.Entry{
 			File:   path.Join(file.SrcDir, file.Info.Name()),
 			Status: fg.grabber.GetStatus(file),

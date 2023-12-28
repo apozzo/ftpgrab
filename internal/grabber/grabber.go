@@ -14,6 +14,7 @@ import (
 	"github.com/crazy-max/ftpgrab/v7/internal/journal"
 	"github.com/crazy-max/ftpgrab/v7/internal/server"
 	"github.com/crazy-max/ftpgrab/v7/internal/server/ftp"
+	"github.com/crazy-max/ftpgrab/v7/internal/server/http"
 	"github.com/crazy-max/ftpgrab/v7/internal/server/sftp"
 	"github.com/crazy-max/ftpgrab/v7/pkg/utl"
 	"github.com/docker/go-units"
@@ -56,6 +57,8 @@ func New(dlConfig *config.Download, dbConfig *config.Db, dbCli *db.Client, serve
 		serverCli, err = ftp.New(serverConfig.FTP)
 	} else if serverConfig.SFTP != nil {
 		serverCli, err = sftp.New(serverConfig.SFTP)
+	} else if serverConfig.HTTP != nil {
+		serverCli, err = http.New(serverConfig.HTTP)
 	} else {
 		return nil, errors.New("No server defined")
 	}
@@ -98,7 +101,6 @@ func (c *Client) Grab(files []File, concurrency uint32) journal.Journal {
 	var wg sync.WaitGroup
 
 	for _, file := range files {
-
 		if c.stopDownload.Load() {
 			log.Info().Msg("Stop Downloading")
 			break
@@ -113,7 +115,6 @@ func (c *Client) Grab(files []File, concurrency uint32) journal.Journal {
 		wg.Add(1)
 
 		go func(fileToDownload File) {
-
 			defer wg.Done()
 
 			var threadcli *Client
@@ -210,7 +211,6 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 
 	err = c.server.Retrieve(srcpath, destfile)
 	if err != nil {
-
 		if strings.Contains(err.Error(), "quota exceeded") {
 			c.stopDownload.Store(true)
 			entry.Level = journal.EntryLevelError
@@ -235,7 +235,6 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 				defer threadcli.CloseWithoutDB()
 				return c.download(file, retry)
 			}
-
 		}
 	} else {
 		if err = destfile.Close(); err != nil {

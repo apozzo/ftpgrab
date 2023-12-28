@@ -76,11 +76,34 @@ func (cfg *Config) validate() error {
 	}
 
 	if cfg.Server != nil {
-		if cfg.Server.FTP == nil && cfg.Server.SFTP == nil {
+		var a int
+		a = 0
+
+		a += func() int {
+			if cfg.Server.FTP != nil {
+				return 1
+			}
+			return 0
+		}()
+		a += func() int {
+			if cfg.Server.SFTP != nil {
+				return 1
+			}
+			return 0
+		}()
+		a += func() int {
+			if cfg.Server.HTTP != nil {
+				return 1
+			}
+			return 0
+		}()
+
+		if a < 1 {
 			return errors.New("A server must be defined")
-		} else if cfg.Server.FTP != nil && cfg.Server.SFTP != nil {
+		} else if a > 1 {
 			return errors.New("Only one server is allowed")
 		}
+
 		if cfg.Server.FTP != nil {
 			if len(cfg.Server.FTP.Sources) == 0 {
 				return errors.New("At least one FTP source is required")
@@ -89,6 +112,11 @@ func (cfg *Config) validate() error {
 		if cfg.Server.SFTP != nil {
 			if len(cfg.Server.SFTP.Sources) == 0 {
 				return errors.New("At least one SFTP source is required")
+			}
+		}
+		if cfg.Server.HTTP != nil {
+			if len(cfg.Server.HTTP.Sources) == 0 {
+				return errors.New("At least one HTTP source is required")
 			}
 		}
 	}

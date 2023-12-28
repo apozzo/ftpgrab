@@ -1,7 +1,7 @@
 # FTP server configuration
 
 !!! warning
-    `ftp` and `sftp` are mutually exclusive
+    `ftp`,`sftp` and `http` are mutually exclusive
 
 !!! example
     ```yaml
@@ -19,6 +19,7 @@
         disableMLSD: false
         escapeRegexpMeta: false
         tls: false
+        explicittls: false
         insecureSkipVerify: false
         logTrace: false
     ```
@@ -201,6 +202,20 @@ Escapes all regular expression metacharacters in the source path. (default `fals
 
 !!! abstract "Environment variables"
     * `FTPGRAB_SERVER_FTP_ESCAPEREGEXPMETA`
+
+### `explicittls`
+
+Use explicitTls FTP over TLS. (default `false`)
+
+!!! example "Config file"
+    ```yaml
+    server:
+      ftp:
+        explicittls: false
+    ```
+
+!!! abstract "Environment variables"
+    * `FTPGRAB_SERVER_FTP_EXPLICITTLS`
 
 ### `tls`
 

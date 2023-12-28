@@ -198,7 +198,7 @@ jobs:
             type=edge
           labels: |
             org.opencontainers.image.title=FTPGrab
-            org.opencontainers.image.description=Grab your files periodically from a remote FTP or SFTP server easily
+            org.opencontainers.image.description=Grab your files periodically from a remote FTP, SFTP or HTTP(S) server easily
             org.opencontainers.image.vendor=CrazyMax
       -
         name: Set up QEMU

@@ -12,7 +12,7 @@ ftpgrab [options]
 $ ftpgrab --help
 Usage: ftpgrab
 
-Grab your files periodically from a remote FTP or SFTP server easily. More info:
+Grab your files periodically from a remote FTP, SFTP or HTTP(S) server easily. More info:
 https://github.com/crazy-max/ftpgrab
 
 Flags:
@@ -30,6 +30,7 @@ Flags:
       --log-caller          Add file:line of the caller to log output
                             ($LOG_CALLER).
       --log-file=STRING     Add logging to a specific file ($LOG_FILE).
+      --log-color=false     Add color to logging.
 ```
 
 ## Environment variables
@@ -47,3 +48,4 @@ Following environment variables can be used in place:
 | `LOG_TIMESTAMP`    | `true`        | Adds the current local time as UNIX timestamp to the logger context |
 | `LOG_CALLER`       | `false`       | Enable to add `file:line` of the caller |
 | `LOG_FILE`         |               | Add logging to a specific file |
+| `LOG_COLOR`        | `false`       | Enable coloring of logs |

@@ -17,7 +17,7 @@
 
 **FTPGrab** :zap: is a CLI application written in [Go](https://golang.org/) and delivered as a
 [single executable]({{ config.repo_url }}releases/latest) (and a [Docker image](install/docker.md))
-to grab your files from a remote FTP or SFTP server to your NAS, server or computer.
+to grab your files from a remote FTP, SFTP or HTTP(S) server to your NAS, server or computer.
 
 With Go, this can be done with an independent binary distribution across all platforms and architectures that Go supports.
 This support includes Linux, macOS, and Windows, on architectures like amd64, 386, ARM, PowerPC, and others.
@@ -28,7 +28,7 @@ periodically to your Synology, Qnap, D-Link and others NAS.
 ## Features
 
 * Multiple sources
-* SFTP support
+* SFTP and HTTP(S) support
 * Prevent re-download through a hash
 * Efficient key/value store database to audit files already downloaded
 * Internal cron implementation through go routines

@@ -5,6 +5,8 @@ go 1.18
 require (
 	github.com/alecthomas/kong v0.7.1
 	github.com/antonmedv/expr v1.14.3
+	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
+	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/crazy-max/gonfig v0.7.1
 	github.com/docker/go-units v0.5.0
 	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
@@ -46,9 +48,10 @@ require (
 	github.com/leodido/go-urn v1.2.3 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/mattn/go-runewidth v0.0.3 // indirect
+	github.com/mattn/go-runewidth v0.0.10 // indirect
 	github.com/olekukonko/tablewriter v0.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rivo/uniseg v0.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect

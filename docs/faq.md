@@ -25,7 +25,7 @@ More examples can be found on the [official library documentation](https://godoc
 You can add multiple sources in the `sources` field of the configuration file:
 
 ```yaml
-ftp|sftp:
+ftp|sftp|http:
   ...
   sources:
     - /path1

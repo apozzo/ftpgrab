@@ -1,0 +1,25 @@
+db:
+  path: ./fixtures/db/ftpgrab.db
+
+server:
+  http:
+    host: test.rebex.net
+    port: 443
+    username: demo
+    password: password
+    sources:
+      - /Content/rebex-logo.gif
+    timeout: 5s
+    disablekeepalives: false
+    disablecompression: false
+    tls: true
+    insecureSkipVerify: false
+    logTrace: false
+
+download:
+  output: ./fixtures/downloads
+  chmodFile: 0o644
+  chmodDir: 0o755
+  retry: 3
+  hideSkipped: false
+  createBaseDir: false

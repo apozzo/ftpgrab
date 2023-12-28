@@ -62,6 +62,7 @@ services:
       - "FTPGRAB_SERVER_FTP_USERNAME=demo"
       - "FTPGRAB_SERVER_FTP_PASSWORD=password"
       - "FTPGRAB_SERVER_FTP_SOURCES=/src1,/src2"
+      - "FTPGRAB_DOWNLOAD_OUTPUT=/download"
       - "FTPGRAB_DOWNLOAD_GID=1000"
       - "FTPGRAB_DOWNLOAD_UID=1000"
       - "FTPGRAB_DOWNLOAD_INCLUDE=^Mr\\.Robot\\.S04.+(VOSTFR|SUBFRENCH).+(720p).+(HDTV|WEB-DL|WEBRip).+"
@@ -95,6 +96,7 @@ docker run -d --name ftpgrab \
   -e "FTPGRAB_SERVER_FTP_USERNAME=demo" \
   -e "FTPGRAB_SERVER_FTP_PASSWORD=password" \
   -e "FTPGRAB_SERVER_FTP_SOURCES=/src1,/src2" \
+  -e "FTPGRAB_DOWNLOAD_OUTPUT=/download" \
   -e "FTPGRAB_DOWNLOAD_GID=1000" \
   -e "FTPGRAB_DOWNLOAD_UID=1000" \
   -e "FTPGRAB_DOWNLOAD_INCLUDE=^Mr\.Robot\.S04.+(VOSTFR|SUBFRENCH).+(720p).+(HDTV|WEB-DL|WEBRip).+" \
@@ -134,6 +136,7 @@ server:
       - /src2
 
 download:
+  output: /download
   uid: 1000
   gid: 1000
   include:
