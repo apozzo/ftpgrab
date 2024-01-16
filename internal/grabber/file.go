@@ -112,8 +112,8 @@ func (c *Client) readDir(base string, srcdir string, destdir string, retry int) 
 
 		if err != nil {
 			log.Error().Str("source", base).Msgf("Cannot connect to server, cannot read directory %s", srcdir)
-			//panic(err)
-			return []File{}
+			panic(err)
+			//return []File{}
 		}
 		return c.readDir(base, srcdir, destdir, retry)
 	}
@@ -140,7 +140,7 @@ func (c *Client) readFile(base string, srcdir string, destdir string, file os.Fi
 	srcfile := path.Join(srcdir, file.Name())
 	destfile := path.Join(destdir, file.Name())
 
-	if file.IsDir() {
+	if file.IsDir() && *c.config.Recursive {
 		return c.readDir(base, srcfile, destfile, 0)
 	}
 

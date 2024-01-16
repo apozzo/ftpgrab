@@ -30,6 +30,7 @@ download:
   retry: 3
   hideSkipped: false
   createBaseDir: false
+  recursive: true
 
 notif:
   mail:

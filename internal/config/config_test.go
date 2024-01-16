@@ -73,6 +73,7 @@ func TestLoadFile(t *testing.T) {
 					HideSkipped:   utl.NewFalse(),
 					TempFirst:     utl.NewFalse(),
 					CreateBaseDir: utl.NewFalse(),
+					Recursive:     utl.NewTrue(),
 				},
 				Notif: &Notif{
 					Mail: &NotifMail{
@@ -178,6 +179,7 @@ func TestLoadEnv(t *testing.T) {
 					HideSkipped:   utl.NewFalse(),
 					TempFirst:     utl.NewFalse(),
 					CreateBaseDir: utl.NewFalse(),
+					Recursive:     utl.NewTrue(),
 				},
 			},
 			wantErr: false,
@@ -216,6 +218,7 @@ func TestLoadEnv(t *testing.T) {
 					HideSkipped:   utl.NewFalse(),
 					TempFirst:     utl.NewFalse(),
 					CreateBaseDir: utl.NewFalse(),
+					Recursive:     utl.NewTrue(),
 				},
 			},
 			wantErr: false,
@@ -336,6 +339,7 @@ func TestLoadMixed(t *testing.T) {
 					HideSkipped:   utl.NewFalse(),
 					TempFirst:     utl.NewFalse(),
 					CreateBaseDir: utl.NewFalse(),
+					Recursive:     utl.NewTrue(),
 				},
 				Notif: &Notif{
 					Mail: &NotifMail{
@@ -388,6 +392,7 @@ func TestLoadMixed(t *testing.T) {
 					HideSkipped:   utl.NewTrue(),
 					TempFirst:     utl.NewFalse(),
 					CreateBaseDir: utl.NewFalse(),
+					Recursive:     utl.NewTrue(),
 				},
 				Notif: &Notif{
 					Slack: &NotifSlack{

@@ -24,6 +24,7 @@ download:
   hideSkipped: false
   tempFirst: false
   createBaseDir: false
+  recursive: true
 
 notif:
   mail:

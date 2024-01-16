@@ -59,6 +59,7 @@ You can override this using the [`--config` flag or `CONFIG` env var](../usage/c
       hideSkipped: false
       tempFirst: false
       createBaseDir: false
+      recursive: true
     
     notif:
       mail:
@@ -117,6 +118,7 @@ All configuration from file can be transposed into environment variables. As an 
       hideSkipped: false
       tempFirst: false
       createBaseDir: false
+      recursive: true
     
     notif:
       mail:
@@ -158,6 +160,7 @@ Can be transposed to:
     FTPGRAB_DOWNLOAD_HIDESKIPPED=false
     FTPGRAB_DOWNLOAD_TEMPFIRST=false
     FTPGRAB_DOWNLOAD_CREATEBASEDIR=false
+    FTPGRAB_DOWNLOAD_RECURSIVE=true
     
     FTPGRAB_NOTIF_MAIL_HOST=smtp.example.com
     FTPGRAB_NOTIF_MAIL_PORT=587

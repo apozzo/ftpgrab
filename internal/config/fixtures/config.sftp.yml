@@ -19,3 +19,4 @@ download:
   retry: 3
   hideSkipped: true
   createBaseDir: false
+  recursive: true

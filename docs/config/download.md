@@ -17,6 +17,7 @@
       hideSkipped: false
       tempFirst: false
       createBaseDir: false
+      recursive: true
     ```
 
 ## `output`
@@ -180,3 +181,19 @@ source paths to prevent overwriting. (default: `false`)
 
 !!! abstract "Environment variables"
     * `FTPGRAB_DOWNLOAD_CREATEBASEDIR`
+
+## `recursive`
+
+Download files recursivly. (default: `true`)
+
+!!! warning
+    May download lots of files and lots of data.
+
+!!! example "Config file"
+    ```yaml
+    download:
+      recursive: true
+    ```
+
+!!! abstract "Environment variables"
+    * `FTPGRAB_DOWNLOAD_RECURSIVE`

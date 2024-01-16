@@ -19,6 +19,7 @@ type Download struct {
 	Since         string      `yaml:"since,omitempty" json:"since,omitempty"`
 	SinceTime     time.Time   `yaml:"-" json:"-" label:"-" file:"-"`
 	Retry         int         `yaml:"retry,omitempty" json:"retry,omitempty"`
+	Recursive     *bool       `yaml:"recursive,omitempty" json:"recursive,omitempty"`
 	HideSkipped   *bool       `yaml:"hideSkipped,omitempty" json:"hideSkipped,omitempty"`
 	TempFirst     *bool       `yaml:"tempFirst,omitempty" json:"tempFirst,omitempty"`
 	CreateBaseDir *bool       `yaml:"createBaseDir,omitempty" json:"createBaseDir,omitempty"`
@@ -41,4 +42,5 @@ func (s *Download) SetDefaults() {
 	s.HideSkipped = utl.NewFalse()
 	s.TempFirst = utl.NewFalse()
 	s.CreateBaseDir = utl.NewFalse()
+	s.Recursive = utl.NewTrue()
 }
