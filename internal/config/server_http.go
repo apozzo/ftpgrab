@@ -21,6 +21,9 @@ type ServerHTTP struct {
 	TLS                *bool          `yaml:"tls,omitempty" json:"tls,omitempty"`
 	InsecureSkipVerify *bool          `yaml:"insecureSkipVerify,omitempty" json:"insecureSkipVerify,omitempty"`
 	LogTrace           *bool          `yaml:"logTrace,omitempty" json:"logTrace,omitempty"`
+	Proxy              string         `yaml:"proxy,omitempty" json:"proxy,omitempty"`
+	ProxyUsername      string         `yaml:"proxyUsername,omitempty" json:"proxyUsername,omitempty"`
+	ProxyPassword      string         `yaml:"proxyPassword,omitempty" json:"proxyPassword,omitempty"`
 }
 
 // GetDefaults gets the default values
