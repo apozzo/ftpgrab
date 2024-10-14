@@ -67,23 +67,23 @@ func New(config *config.ServerHTTP) (*server.Client, error) {
 		ResponseHeaderTimeout: *config.Timeout,
 	}
 
-	// Si un proxy est configuré dans 'config.Proxy'
+	// If a proxy is configured in 'config.Proxy'
 	if config.Proxy != "" {
-		// Parse l'URL du proxy
+		// Parse the proxy URL
 		proxyURL, err := url.Parse(config.Proxy)
 		if err != nil {
 			return nil, fmt.Errorf("Invalid proxy URL: %v", err)
 		}
 
-		// Si un nom d'utilisateur et un mot de passe sont fournis, on les ajoute à l'URL du proxy
+		// If a username and password are provided, add them to the proxy URL
 		if config.ProxyUsername != "" && config.ProxyPassword != "" {
 			proxyURL.User = url.UserPassword(config.ProxyUsername, config.ProxyPassword)
 		}
 
-		// Configuration du transport HTTP pour utiliser ce proxy
+		// Configure the HTTP transport to use this proxy
 		tr.Proxy = http.ProxyURL(proxyURL)
 	} else {
-		// Si aucun proxy n'est spécifié, on utilise les paramètres de l'environnement
+		// If no proxy is specified, use the environment settings
 		tr.Proxy = http.ProxyFromEnvironment
 	}
 
