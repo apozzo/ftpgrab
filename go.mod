@@ -2,8 +2,6 @@ module github.com/crazy-max/ftpgrab/v7
 
 go 1.21
 
-toolchain go1.21.0
-
 require (
 	github.com/alecthomas/kong v0.7.1
 	github.com/antonmedv/expr v1.14.3
