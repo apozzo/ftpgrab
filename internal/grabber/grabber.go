@@ -2,6 +2,7 @@ package grabber
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"strings"
@@ -154,7 +155,7 @@ func (c *Client) SkippingFile(entry *journal.Entry, sublogger zerolog.Logger) *j
 
 func (c *Client) download(file File, retry int) *journal.Entry {
 	srcpath := path.Join(file.SrcDir, file.Info.Name())
-	destpath := path.Join(file.DestDir, file.Info.Name())
+	destpath := strings.Replace(path.Join(file.DestDir, file.Info.Name()), "s3:/", "s3://", 1)
 
 	entry := &journal.Entry{
 		File:   srcpath,
@@ -189,15 +190,17 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 
 	retrieveStart := time.Now()
 
-	destfolder := path.Dir(destpath)
-	if err := os.MkdirAll(destfolder, os.ModePerm); err != nil {
-		sublogger.Error().Err(err).Msg("Cannot create destination dir")
-		entry.Level = journal.EntryLevelError
-		entry.Text = fmt.Sprintf("Cannot create destination dir: %v", err)
-		return entry
-	}
-	if err := c.fixPerms(destfolder); err != nil {
-		sublogger.Warn().Err(err).Msg("Cannot fix parent folder permissions")
+	if !strings.HasPrefix(destpath, "s3://") {
+		destfolder := path.Dir(destpath)
+		if err := os.MkdirAll(destfolder, os.ModePerm); err != nil {
+			sublogger.Error().Err(err).Msg("Cannot create destination dir")
+			entry.Level = journal.EntryLevelError
+			entry.Text = fmt.Sprintf("Cannot create destination dir: %v", err)
+			return entry
+		}
+		if err := c.fixPerms(destfolder); err != nil {
+			sublogger.Warn().Err(err).Msg("Cannot fix parent folder permissions")
+		}
 	}
 
 	destfile, err := c.createFile(destpath)
@@ -244,17 +247,28 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 			return entry
 		}
 
-		if *c.config.TempFirst {
+		if *c.config.TempFirst || strings.HasPrefix(destpath, "s3://") {
 			log.Debug().
 				Str("tempfile", destfile.Name()).
 				Str("destfile", destpath).
 				Msgf("Move temp file")
-			err := moveFile(destfile.Name(), destpath)
-			if err != nil {
-				sublogger.Error().Err(err).Msg("Cannot move file")
-				entry.Level = journal.EntryLevelError
-				entry.Text = fmt.Sprintf("Cannot move file: %v", err)
-				return entry
+
+			if strings.HasPrefix(destpath, "s3://") {
+				err := moveFileToS3(destfile.Name(), destpath)
+				if err != nil {
+					sublogger.Error().Err(err).Msg("Cannot upload file to AWS S3")
+					entry.Level = journal.EntryLevelError
+					entry.Text = fmt.Sprintf("Cannot upload file to AWS S3: %v", err)
+					return entry
+				}
+			} else {
+				err := moveFile(destfile.Name(), destpath)
+				if err != nil {
+					sublogger.Error().Err(err).Msg("Cannot move file")
+					entry.Level = journal.EntryLevelError
+					entry.Text = fmt.Sprintf("Cannot move file: %v", err)
+					return entry
+				}
 			}
 		}
 
@@ -267,16 +281,20 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 			units.HumanSize(float64(file.Info.Size())),
 			time.Since(retrieveStart).Round(time.Millisecond).String(),
 		)
-		if err := c.fixPerms(destpath); err != nil {
-			sublogger.Warn().Err(err).Msg("Cannot fix file permissions")
+
+		if !strings.HasPrefix(destpath, "s3://") {
+			if err := c.fixPerms(destpath); err != nil {
+				sublogger.Warn().Err(err).Msg("Cannot fix file permissions")
+			}
+			if err = os.Chtimes(destpath, file.Info.ModTime(), file.Info.ModTime()); err != nil {
+				sublogger.Warn().Err(err).Msg("Cannot change modtime of destination file")
+			}
 		}
+
 		if err := c.db.PutHash(file.Base, file.SrcDir, file.Info); err != nil {
 			sublogger.Error().Err(err).Msg("Cannot add hash into db")
 			entry.Level = journal.EntryLevelWarning
 			entry.Text = fmt.Sprintf("Successfully downloaded but cannot add hash into db: %v", err)
-		}
-		if err = os.Chtimes(destpath, file.Info.ModTime(), file.Info.ModTime()); err != nil {
-			sublogger.Warn().Err(err).Msg("Cannot change modtime of destination file")
 		}
 	}
 
@@ -284,7 +302,7 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 }
 
 func (c *Client) createFile(filename string) (*os.File, error) {
-	if *c.config.TempFirst {
+	if *c.config.TempFirst || strings.HasPrefix(filename, "s3://") {
 		tempfile, err := os.CreateTemp(c.tempdir, path.Base(filename))
 		if err != nil {
 			return nil, err
@@ -306,7 +324,13 @@ func (c *Client) GetStatus(file File) journal.EntryStatus {
 		return journal.EntryStatusExcluded
 	} else if file.Info.ModTime().Before(c.config.SinceTime) {
 		return journal.EntryStatusOutdated
-	} else if destfile, err := os.Stat(path.Join(file.DestDir, file.Info.Name())); err == nil {
+	} else if destfile, err := func(isawss3 bool) (fs.FileInfo, error) {
+		if isawss3 {
+			return nil, errors.New("is AWS s3")
+		} else {
+			return os.Stat(path.Join(file.DestDir, file.Info.Name()))
+		}
+	}(strings.HasPrefix(file.DestDir, "s3://")); err == nil {
 		if destfile.Size() == file.Info.Size() {
 			return journal.EntryStatusAlreadyDl
 		}

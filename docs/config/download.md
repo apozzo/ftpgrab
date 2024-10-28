@@ -23,6 +23,7 @@
 ## `output`
 
 Output destination folder of downloaded files. Env var `FTPGRAB_DOWNLOAD_OUTPUT` overrides this value.
+Support s3:// type urls as destinations (Credentials from the env as an AWS cli).
 
 !!! example "Config file"
     ```yaml
