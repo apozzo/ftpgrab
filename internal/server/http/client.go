@@ -1,11 +1,13 @@
 package http
 
 import (
+	"bytes"
 	"crypto/tls"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -82,17 +84,8 @@ func (c *Client) Common() config.ServerCommon {
 	}
 }
 
-// ReadDir fetches the contents of a directory, returning a list of os.FileInfo's
 // for http urls it heads the url to retrieve size and date
-func (c *Client) ReadDir(path string) ([]os.FileInfo, error) {
-	var urlStr string
-	urlStr = "http"
-	if *c.config.TLS {
-		urlStr += "s"
-	}
-
-	// prepare url
-	urlStr += "://" + c.config.Host + ":" + strconv.Itoa(c.config.Port) + path
+func (c *Client) HeadUrl(path string, urlStr string) ([]os.FileInfo, error) {
 
 	log.Debug().Msgf("HTTP Head url %s ...", urlStr)
 
@@ -164,6 +157,85 @@ func (c *Client) ReadDir(path string) ([]os.FileInfo, error) {
 	entries = append(entries, fileInfo)
 
 	return entries, nil
+
+}
+
+// ReadDir fetches the contents of a directory, returning a list of os.FileInfo's
+// for http urls it heads the url to retrieve size and date
+func (c *Client) ReadDir(path string) ([]os.FileInfo, error) {
+	var urlStr string
+	urlStr = "http"
+	if *c.config.TLS {
+		urlStr += "s"
+	}
+
+	// prepare url
+	urlStr += "://" + c.config.Host + ":" + strconv.Itoa(c.config.Port) + path
+
+	if *c.config.AutoIndex {
+
+		urlStrAutoIndex := urlStr + "?F=0"
+
+		log.Debug().Msgf("HTTP Get url %s ...", urlStrAutoIndex)
+
+		// prepare GET request
+		req, err := http.NewRequest("GET", urlStrAutoIndex, nil)
+		if err != nil {
+			log.Debug().Str("path", path).Msgf("Cannot create grab get request for url %s", urlStrAutoIndex)
+			return nil, err
+		}
+
+		// send the request and get the response
+		resp, err := c.http.HTTPClient.Do(req)
+		if err != nil {
+			log.Debug().Str("path", path).Err(err).Msgf("Error sending request to GET url %s !", urlStrAutoIndex)
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		// read response body
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Debug().Str("path", path).Err(err).Msgf("Error reading Body to url %s !", urlStr)
+			return nil, err
+		}
+
+		bodyBuffer := bytes.NewBuffer(body)
+		reHref := regexp.MustCompile(`href="([^"]+)"`)
+		relocalUrl := regexp.MustCompile(`^(?:\./)?(?:[[:alnum:]\.\-_])+$`)
+		var entries []os.FileInfo
+
+		for {
+			line, err := bodyBuffer.ReadString('>') // No encoding ??
+			if line != "" {
+				if subm := reHref.FindAllStringSubmatch(line, -1); subm != nil {
+					for _, sub := range subm {
+						if relocalUrl.MatchString(sub[1]) {
+							log.Debug().Msgf("Found href %s", sub[1])
+
+							entry, err := c.HeadUrl(path+sub[1], urlStr+sub[1])
+							if err == nil {
+								entries = append(entries, entry...)
+							}
+						}
+					}
+				}
+			}
+
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				log.Debug().Str("path", path).Err(err).Msgf("Error reading Body to url %s !", urlStr)
+				return nil, err
+			}
+		}
+
+		return entries, nil
+
+	} else {
+		// autoindex is disabled for this server
+		return c.HeadUrl(path, urlStr)
+	}
 }
 
 // Retrieve file "path" from server and write bytes to "dest".
