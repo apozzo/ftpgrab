@@ -3,8 +3,10 @@ package http
 import (
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -65,6 +67,26 @@ func New(config *config.ServerHTTP) (*server.Client, error) {
 
 		// IdleConnTimeout time.Duration
 		ResponseHeaderTimeout: *config.Timeout,
+	}
+
+	// If a proxy is configured in 'config.Proxy'
+	if config.Proxy != "" {
+		// Parse the proxy URL
+		proxyURL, err := url.Parse(config.Proxy)
+		if err != nil {
+			return nil, fmt.Errorf("Invalid proxy URL: %v", err)
+		}
+
+		// If a username and password are provided, add them to the proxy URL
+		if config.ProxyUsername != "" && config.ProxyPassword != "" {
+			proxyURL.User = url.UserPassword(config.ProxyUsername, config.ProxyPassword)
+		}
+
+		// Configure the HTTP transport to use this proxy
+		tr.Proxy = http.ProxyURL(proxyURL)
+	} else {
+		// If no proxy is specified, use the environment settings
+		tr.Proxy = http.ProxyFromEnvironment
 	}
 
 	client.http = grab.NewClient()

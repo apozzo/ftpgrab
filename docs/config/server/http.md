@@ -17,6 +17,9 @@
         tls: true
         insecureSkipVerify: false
         autoIndex: false
+        proxy: http://proxy.example.com:8080
+        proxyUsername: proxyFoo
+        proxyPassword: proxyBar
     ```
 
 ## Reference
@@ -107,6 +110,48 @@ Use content of secret file as HTTP password if `password` not defined.
 
 !!! abstract "Environment variables"
     * `FTPGRAB_SERVER_HTTP_PASSWORDFILE`
+
+### `proxy`
+
+Proxy URL to be used for HTTP(S) connections.
+
+!!! example "Config file" 
+    ```yaml
+    server:
+      http:
+        proxy: http://proxy.example.com:8080
+    ```
+
+!!! abstract "Environment variables"
+    * `FTPGRAB_SERVER_HTTP_PROXY`
+
+### `proxyUsername`
+
+Username for the HTTP proxy authentication (if required).
+
+!!! example "Config file"
+    ```yaml
+    server:
+      http:
+        proxyUsername: proxyFoo
+    ```
+
+!!! abstract "Environment variables"
+    * `FTPGRAB_SERVER_HTTP_PROXYUSERNAME`
+
+### `proxyPassword`
+
+Password for the HTTP proxy authentication (if required).
+
+!!! example "Config file"
+    ```yaml
+    server:
+      http:
+        proxyPassword: proxyBar
+    ```
+
+!!! abstract "Environment variables"
+    * `FTPGRAB_SERVER_HTTP_PROXYPASSWORD`
 
 ### `sources`
 
