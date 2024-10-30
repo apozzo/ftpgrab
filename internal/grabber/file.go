@@ -1,13 +1,20 @@
 package grabber
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/antonmedv/expr"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/crazy-max/ftpgrab/v7/internal/server/ftp"
 	"github.com/crazy-max/ftpgrab/v7/internal/server/http"
 	"github.com/crazy-max/ftpgrab/v7/internal/server/sftp"
@@ -65,7 +72,8 @@ func (c *Client) ListFiles() []File {
 		if source != "/" && *c.config.CreateBaseDir {
 			if c.serverconfig.HTTP != nil {
 				// for http delete file from source
-				dest = path.Join(dest, filepath.Dir(source))
+				dest = strings.Replace(path.Join(dest, filepath.Dir(source)), "s3:/", "s3://", 1)
+
 			} else {
 				dest = path.Join(dest, source)
 			}
@@ -152,4 +160,53 @@ func (c *Client) readFile(base string, srcdir string, destdir string, file os.Fi
 			Info:    file,
 		},
 	}
+}
+
+func moveFile(oldpath, newpath string) error {
+	return os.Rename(oldpath, newpath)
+}
+
+func moveFileToS3(oldpath, newpath string) error {
+
+	s3loc := regexp.MustCompile(`s3://([[:alnum:]\.\-_]+)/(.+)$`)
+
+	if subm := s3loc.FindAllStringSubmatch(newpath, -1); subm != nil {
+		for _, sub := range subm {
+
+			cfg, err := config.LoadDefaultConfig(context.TODO())
+			if err != nil {
+				log.Error().Str("oldpath", oldpath).Str("newpath", newpath).Err(err).Msg("Cannot load AWS config")
+				return err
+			}
+
+			// Create an Amazon S3 service client
+			client := s3.NewFromConfig(cfg)
+
+			f, err := os.Open(oldpath)
+			if err != nil {
+				log.Error().Str("oldpath", oldpath).Str("newpath", newpath).Err(err).Msg("Error opening file to copy to S3")
+				return err
+			}
+
+			// TODO: add md5sum to request for security
+			output, err := client.PutObject(context.TODO(), &s3.PutObjectInput{
+				Bucket: aws.String(sub[1]),
+				Key:    aws.String(sub[2]),
+				Body:   f,
+			})
+
+			defer f.Close()
+
+			if output == nil && err != nil {
+				log.Error().Str("oldpath", oldpath).Str("newpath", newpath).Err(err).Msg("Error moving file to S3")
+				return err
+			}
+
+			log.Debug().Str("oldpath", oldpath).Str("newpath", newpath).Msgf("Successfully moved file to S3 from %s to %s", oldpath, newpath)
+		}
+		return nil
+	}
+
+	// no submatch !
+	return errors.New("Cannot decode url " + newpath)
 }

@@ -20,6 +20,7 @@ type ServerHTTP struct {
 	DisableCompression *bool          `yaml:"disablecompression,omitempty" json:"disablecompression,omitempty"`
 	TLS                *bool          `yaml:"tls,omitempty" json:"tls,omitempty"`
 	InsecureSkipVerify *bool          `yaml:"insecureSkipVerify,omitempty" json:"insecureSkipVerify,omitempty"`
+	AutoIndex          *bool          `yaml:"autoIndex,omitempty" json:"autoIndex,omitempty"`
 	LogTrace           *bool          `yaml:"logTrace,omitempty" json:"logTrace,omitempty"`
 	Proxy              string         `yaml:"proxy,omitempty" json:"proxy,omitempty"`
 	ProxyUsername      string         `yaml:"proxyUsername,omitempty" json:"proxyUsername,omitempty"`
@@ -42,5 +43,6 @@ func (s *ServerHTTP) SetDefaults() {
 	s.DisableCompression = utl.NewFalse()
 	s.TLS = utl.NewFalse()
 	s.InsecureSkipVerify = utl.NewFalse()
+	s.AutoIndex = utl.NewFalse()
 	s.LogTrace = utl.NewFalse()
 }
