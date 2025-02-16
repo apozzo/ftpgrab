@@ -15,6 +15,8 @@
       since: 2019-02-01T18:50:05Z
       retry: 3
       hideSkipped: false
+      hideIncluded: true
+      hideFiltered: true
       tempFirst: false
       createBaseDir: false
       recursive: true
@@ -152,6 +154,32 @@ Not display skipped downloads. (default: `false`)
 
 !!! abstract "Environment variables"
     * `FTPGRAB_DOWNLOAD_HIDESKIPPED`
+
+## `hideIncluded`
+
+Not display included downloads. (default: `false`)
+
+!!! example "Config file"
+    ```yaml
+    download:
+      hideIncluded: false
+    ```
+
+!!! abstract "Environment variables"
+    * `FTPGRAB_DOWNLOAD_HIDEINCLUDED`
+
+## `hideFiltered`
+
+Not display filtered downloads. (default: `false`)
+
+!!! example "Config file"
+    ```yaml
+    download:
+      hideFiltered: false
+    ```
+
+!!! abstract "Environment variables"
+    * `FTPGRAB_DOWNLOAD_HIDEFILTERED`
 
 ## `tempFirst`
 

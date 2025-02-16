@@ -116,6 +116,7 @@ func (fg *FtpGrab) Run() {
 			Logger()
 
 		if fg.grabber.IsIncluded(file) && !fg.grabber.IsExcluded(file) {
+			fg.grabber.IncludingFile(entry, sublogger)
 			includedFiles = append(includedFiles, file)
 			sumIncluded += float64(file.Info.Size())
 		}
@@ -123,6 +124,7 @@ func (fg *FtpGrab) Run() {
 		if entry.Status.IsSkipped() {
 			fg.grabber.SkippingFile(entry, sublogger)
 		} else {
+			fg.grabber.FilteringFile(entry, sublogger)
 			filteredFiles = append(filteredFiles, file)
 			sumDownloading += float64(file.Info.Size())
 		}

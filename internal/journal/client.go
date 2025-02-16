@@ -18,6 +18,10 @@ func (c *Client) Add(entry Entry) {
 		c.Count.Error++
 	case EntryLevelSkip:
 		c.Count.Skip++
+	case EntryLevelInclude:
+		c.Count.Include++
+	case EntryLevelFilter:
+		c.Count.Filter++
 	case EntryLevelSuccess:
 		c.Count.Success++
 	}

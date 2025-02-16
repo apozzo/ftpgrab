@@ -15,6 +15,8 @@ const (
 	EntryLevelError   = EntryLevel("error")
 	EntryLevelWarning = EntryLevel("warning")
 	EntryLevelSkip    = EntryLevel("skip")
+	EntryLevelInclude = EntryLevel("include")
+	EntryLevelFilter  = EntryLevel("filter")
 	EntryLevelSuccess = EntryLevel("success")
 )
 

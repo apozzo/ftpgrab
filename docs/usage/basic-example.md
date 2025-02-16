@@ -29,6 +29,8 @@ download:
   output: /download
   retry: 3
   hideSkipped: false
+  hideIncluded: true
+  hideFiltered: false
   createBaseDir: false
   recursive: true
 

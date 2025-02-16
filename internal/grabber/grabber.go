@@ -153,6 +153,24 @@ func (c *Client) SkippingFile(entry *journal.Entry, sublogger zerolog.Logger) *j
 	return nil
 }
 
+func (c *Client) IncludingFile(entry *journal.Entry, sublogger zerolog.Logger) *journal.Entry {
+	if !*c.config.HideIncluded {
+		sublogger.Info().Msgf("Included (%s)", entry.Status)
+		entry.Level = journal.EntryLevelInclude
+		return entry
+	}
+	return nil
+}
+
+func (c *Client) FilteringFile(entry *journal.Entry, sublogger zerolog.Logger) *journal.Entry {
+	if !*c.config.HideFiltered {
+		sublogger.Info().Msgf("Filtered (%s)", entry.Status)
+		entry.Level = journal.EntryLevelFilter
+		return entry
+	}
+	return nil
+}
+
 func (c *Client) download(file File, retry int) *journal.Entry {
 	srcpath := path.Join(file.SrcDir, file.Info.Name())
 	destpath := strings.Replace(path.Join(file.DestDir, file.Info.Name()), "s3:/", "s3://", 1)
