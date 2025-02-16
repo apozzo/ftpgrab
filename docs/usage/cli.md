@@ -42,6 +42,7 @@ Following environment variables can be used in place:
 | `CONFIG`           |               | FTPGrab configuration file |
 | `CONCURRENCY`      |               | Download concurrency (threads) |
 | `RUNONSTART`       |               | Begin download at startup or scheduled only |
+| `NODOWNLOAD`       | `false`       | Do not download (just list files)
 | `SCHEDULE`         |               | [CRON expression](https://godoc.org/github.com/robfig/cron#hdr-CRON_Expression_Format) to schedule FTPGrab |
 | `LOG_LEVEL`        | `info`        | Log level output |
 | `LOG_JSON`         | `false`       | Enable JSON logging output |
