@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -209,4 +210,49 @@ func moveFileToS3(oldpath, newpath string) error {
 
 	// no submatch !
 	return errors.New("Cannot decode url " + newpath)
+}
+
+func statFileS3(filepath string) (fs.FileInfo, error) {
+
+	s3loc := regexp.MustCompile(`s3://([[:alnum:]\.\-_]+)/(.+)$`)
+
+	if subm := s3loc.FindAllStringSubmatch(filepath, -1); subm != nil {
+		for _, sub := range subm {
+
+			cfg, err := config.LoadDefaultConfig(context.TODO())
+			if err != nil {
+				log.Error().Str("filepath", filepath).Err(err).Msg("Cannot load AWS config")
+				return nil, err
+			}
+
+			// Create an Amazon S3 service client
+			client := s3.NewFromConfig(cfg)
+
+			// TODO: add md5sum to request for security
+			output, err := client.HeadObject(context.TODO(), &s3.HeadObjectInput{
+				Bucket: aws.String(sub[1]),
+				Key:    aws.String(sub[2]),
+			})
+
+			if output == nil && err != nil {
+				log.Error().Str("filepath", filepath).Err(err).Msg("Error head object from S3")
+				return nil, err
+			}
+
+			log.Debug().Str("filepath", filepath).Msgf("Successfully stat file from S3 for file %s", filepath)
+
+			return &fileInfo{
+				name:    filepath,
+				size:    *output.ContentLength,
+				mode:    fs.FileMode(0777),
+				modTime: *output.LastModified,
+				isDir:   false,
+				sys:     nil,
+			}, nil
+		}
+		return nil, nil
+	}
+
+	// no submatch !
+	return nil, errors.New("Cannot decode url " + filepath)
 }

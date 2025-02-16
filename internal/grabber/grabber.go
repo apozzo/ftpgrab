@@ -326,7 +326,7 @@ func (c *Client) GetStatus(file File) journal.EntryStatus {
 		return journal.EntryStatusOutdated
 	} else if destfile, err := func(isawss3 bool) (fs.FileInfo, error) {
 		if isawss3 {
-			return nil, errors.New("is AWS s3")
+			return statFileS3(file.DestDir + "/" + file.Info.Name())
 		} else {
 			return os.Stat(path.Join(file.DestDir, file.Info.Name()))
 		}
