@@ -1,9 +1,12 @@
 package sftp
 
 import (
+	"bufio"
+	"container/ring"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/crazy-max/ftpgrab/v7/internal/config"
 	"github.com/crazy-max/ftpgrab/v7/internal/server"
@@ -28,36 +31,90 @@ func New(config *config.ServerSFTP) (*server.Client, error) {
 	var client = &Client{config: config}
 	var sshConf *ssh.ClientConfig
 	var sshAuth []ssh.AuthMethod
+	var username string = ""
+	var password string = ""
 
-	// SSH Auth
-	if len(config.KeyFile) > 0 {
-		keyPassphrase, err := utl.GetSecret(config.KeyPassphrase, config.KeyPassphraseFile)
-		if err != nil {
-			log.Warn().Err(err).Msg("Cannot retrieve key passphrase secret for sftp server")
+	if len(config.AccountsPoolFile) > 0 && config.AccountsRing == nil {
+		array := []string{}
+
+		log.Info().Str("AccountsPoolFile", config.AccountsPoolFile).Msgf("Read Accounts pool file %s", config.AccountsPoolFile)
+
+		fileHandle, _ := os.Open(config.AccountsPoolFile)
+		defer fileHandle.Close()
+
+		scanner := bufio.NewScanner(fileHandle)
+		for scanner.Scan() {
+			array = append(array, scanner.Text())
 		}
-		if sshAuth, err = client.readPublicKey(config.KeyFile, keyPassphrase); err != nil {
-			return nil, errors.Wrap(err, "Unable to read SFTP public key")
+		if err := scanner.Err(); err != nil {
+			return nil, errors.Wrap(err, "Error when reading accounts pool file")
 		}
-	} else if len(config.Password) > 0 || len(config.PasswordFile) > 0 {
-		password, err := utl.GetSecret(config.Password, config.PasswordFile)
-		if err != nil {
-			log.Warn().Err(err).Msg("Cannot retrieve password secret for sftp server")
+
+		log.Debug().Str("Accounts pool", fmt.Sprintf("%v", array)).Msgf("Read Accounts pool file %s", config.AccountsPoolFile)
+		ln := len(array)
+
+		config.AccountsRing = ring.New(ln)
+		for i := 0; i < ln; i++ {
+			log.Debug().Str("Account", array[i]).Msgf("Adding account %s to pool", array[i])
+			config.AccountsRing.Value = array[i]
+			config.AccountsRing = config.AccountsRing.Next()
 		}
+	}
+
+	if config.AccountsRing != nil {
+
+		log.Debug().Str("AccountsPoolFile", config.AccountsPoolFile).Msgf("Read next account from pool file %s", config.AccountsPoolFile)
+
+		lineInPool := strings.Split(config.AccountsRing.Value.(string), ";")
+		username = lineInPool[0]
+		password = lineInPool[1]
+
+		config.AccountsRing = config.AccountsRing.Next()
+
+		log.Debug().Str("Account", username).Msgf("Using account %s from pool", username)
+
 		sshAuth = []ssh.AuthMethod{
 			ssh.Password(password),
 		}
-	}
 
-	username, err := utl.GetSecret(config.Username, config.UsernameFile)
-	if err != nil {
-		log.Warn().Err(err).Msg("Cannot retrieve username secret for sftp server")
-	}
+		sshConf = &ssh.ClientConfig{
+			User:            username,
+			Auth:            sshAuth,
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			Timeout:         *config.Timeout,
+		}
 
-	sshConf = &ssh.ClientConfig{
-		User:            username,
-		Auth:            sshAuth,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         *config.Timeout,
+	} else {
+		// SSH Auth
+		if len(config.KeyFile) > 0 {
+			keyPassphrase, err := utl.GetSecret(config.KeyPassphrase, config.KeyPassphraseFile)
+			if err != nil {
+				log.Warn().Err(err).Msg("Cannot retrieve key passphrase secret for sftp server")
+			}
+			if sshAuth, err = client.readPublicKey(config.KeyFile, keyPassphrase); err != nil {
+				return nil, errors.Wrap(err, "Unable to read SFTP public key")
+			}
+		} else if len(config.Password) > 0 || len(config.PasswordFile) > 0 {
+			password, err := utl.GetSecret(config.Password, config.PasswordFile)
+			if err != nil {
+				log.Warn().Err(err).Msg("Cannot retrieve password secret for sftp server")
+			}
+			sshAuth = []ssh.AuthMethod{
+				ssh.Password(password),
+			}
+		}
+
+		username, err := utl.GetSecret(config.Username, config.UsernameFile)
+		if err != nil {
+			log.Warn().Err(err).Msg("Cannot retrieve username secret for sftp server")
+		}
+
+		sshConf = &ssh.ClientConfig{
+			User:            username,
+			Auth:            sshAuth,
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			Timeout:         *config.Timeout,
+		}
 	}
 
 	sshConf.SetDefaults()

@@ -96,6 +96,12 @@ func (c *Client) readDir(base string, srcdir string, destdir string, retry int) 
 	}
 
 	items, err := c.server.ReadDir(srcdir)
+
+	// for debug
+	// if rand.Intn(2) == 1 {
+	// 	err = errors.New("random error generated for debug Accounts Pool")
+	// }
+
 	if err != nil {
 		retry++
 		log.Error().Err(err).Str("source", base).Msgf("Cannot read directory %s, retry %d/%d", srcdir, retry, c.config.Retry)
