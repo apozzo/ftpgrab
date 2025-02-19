@@ -33,10 +33,12 @@ type Client struct {
 	serverconfig *config.Server
 	tempdir      string
 	stopDownload *atomic.Bool
+	concurrency  uint32
+	threaddelay  uint32
 }
 
 // New creates new grabber instance
-func New(dlConfig *config.Download, dbConfig *config.Db, dbCli *db.Client, serverConfig *config.Server) (*Client, error) {
+func New(dlConfig *config.Download, dbConfig *config.Db, dbCli *db.Client, serverConfig *config.Server, concurrency uint32, threaddelay uint32) (*Client, error) {
 	var dbCliLocal *db.Client
 	var serverCli *server.Client
 	var stopDownload atomic.Bool
@@ -83,6 +85,8 @@ func New(dlConfig *config.Download, dbConfig *config.Db, dbCli *db.Client, serve
 		serverconfig: serverConfig,
 		tempdir:      tempdir,
 		stopDownload: &stopDownload,
+		concurrency:  concurrency,
+		threaddelay:  threaddelay,
 	}, nil
 }
 
@@ -121,7 +125,7 @@ func (c *Client) Grab(files []File, concurrency uint32) journal.Journal {
 			var threadcli *Client
 			var err error
 
-			if threadcli, err = New(c.config, c.dbConfig, c.db, c.serverconfig); err != nil {
+			if threadcli, err = New(c.config, c.dbConfig, c.db, c.serverconfig, concurrency, c.threaddelay); err != nil {
 				log.Error().Str("file", path.Join(fileToDownload.SrcDir, fileToDownload.Info.Name())).Err(err).Msg("Cannot create grabber")
 			} else {
 				defer threadcli.CloseWithoutDB()
@@ -230,6 +234,10 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 	}
 	defer destfile.Close()
 
+	if c.threaddelay > 0 {
+		time.Sleep(time.Millisecond * time.Duration(c.threaddelay))
+	}
+
 	err = c.server.Retrieve(srcpath, destfile)
 	if err != nil {
 		if strings.Contains(err.Error(), "quota exceeded") {
@@ -250,7 +258,7 @@ func (c *Client) download(file File, retry int) *journal.Entry {
 			var threadcli *Client
 			var err error
 
-			if threadcli, err = New(c.config, c.dbConfig, c.db, c.serverconfig); err != nil {
+			if threadcli, err = New(c.config, c.dbConfig, c.db, c.serverconfig, c.concurrency, c.threaddelay); err != nil {
 				log.Warn().Err(err).Msg("Cannot create grabber")
 			} else {
 				defer threadcli.CloseWithoutDB()

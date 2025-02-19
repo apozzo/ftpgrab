@@ -91,6 +91,10 @@ func (c *Client) readDir(base string, srcdir string, destdir string, retry int) 
 
 	log.Debug().Str("source", base).Msgf("Read directory %s, retry %d/%d", srcdir, retry, c.config.Retry)
 
+	if c.threaddelay > 0 {
+		time.Sleep(time.Millisecond * time.Duration(c.threaddelay))
+	}
+
 	items, err := c.server.ReadDir(srcdir)
 	if err != nil {
 		retry++

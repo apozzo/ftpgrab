@@ -84,7 +84,7 @@ func (fg *FtpGrab) Run() {
 	}
 
 	// Grabber client
-	if fg.grabber, err = grabber.New(fg.cfg.Download, fg.cfg.Db, nil, fg.cfg.Server); err != nil {
+	if fg.grabber, err = grabber.New(fg.cfg.Download, fg.cfg.Db, nil, fg.cfg.Server, fg.cfg.Cli.Concurrency, fg.cfg.Cli.ThreadDelay); err != nil {
 		log.Fatal().Err(err).Msg("Cannot create grabber")
 	}
 	defer fg.grabber.CloseDB()

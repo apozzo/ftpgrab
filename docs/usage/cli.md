@@ -23,6 +23,7 @@ Flags:
       --runonstart=true     Begin download at startup or scheduled only
       --nodownload=false    Do not download (just list files)
       --concurrency=1       Download concurrency (threads)
+      --threadDelay=1       Delay between two downloads in the same thread (in milliseconds)
       --log-level="info"    Set log level ($LOG_LEVEL).
       --log-json            Enable JSON logging output ($LOG_JSON).
       --log-timestamp       Adds the current local time as UNIX timestamp to the
@@ -41,6 +42,7 @@ Following environment variables can be used in place:
 |--------------------|---------------|---------------|
 | `CONFIG`           |               | FTPGrab configuration file |
 | `CONCURRENCY`      |               | Download concurrency (threads) |
+| `THREADDELAY`      |               | Delay between two downloads in the same thread (in milliseconds) |
 | `RUNONSTART`       |               | Begin download at startup or scheduled only |
 | `NODOWNLOAD`       | `false`       | Do not download (just list files)
 | `SCHEDULE`         |               | [CRON expression](https://godoc.org/github.com/robfig/cron#hdr-CRON_Expression_Format) to schedule FTPGrab |

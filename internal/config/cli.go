@@ -10,6 +10,7 @@ type Cli struct {
 	RunOnStart   bool   `kong:"name='runonstart',env='RUNONSTART',default='true',help='First run on startup then schedule if set.'"`
 	NoDownload   bool   `kong:"name='nodownload',env='NODOWNLOAD',default='false',help='Do not download files.'"`
 	Concurrency  uint32 `kong:"name='concurrency',env='CONCURRENCY',default='1',help='Concurrency for download.'"`
+	ThreadDelay  uint32 `kong:"name='threaddelay',env='THREADDELAY',default='0',help='Delay between two downloads in the same thread.'"`
 	LogLevel     string `kong:"name='log-level',env='LOG_LEVEL',default='info',help='Set log level.'"`
 	LogJSON      bool   `kong:"name='log-json',env='LOG_JSON',default='false',help='Enable JSON logging output.'"`
 	LogTimestamp bool   `kong:"name='log-timestamp',env='LOG_TIMESTAMP',default='true',help='Adds the current local time as UNIX timestamp to the logger context.'"`
